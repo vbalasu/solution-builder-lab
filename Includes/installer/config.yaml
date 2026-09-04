@@ -1,0 +1,60 @@
+# ============================================================================
+# config.yaml — input to the pure-Python Solution Builder installer.
+#
+# This copy is tuned for a LAB workspace (Vocareum / classroom) where the
+# admin Workspace-Setup notebook runs it UNATTENDED on the workspace's own
+# ambient credentials. It therefore leaves the workspace-specific values blank
+# and lets Includes/Workspace-Setup.py fill them in at runtime:
+#
+#   • databricks.workspace_url  → the current workspace host (auto-detected)
+#   • databricks.profile        → "" (ambient auth — no login in a notebook)
+#   • endpoints.*               → "auto" (a callable endpoint is discovered)
+#
+# Nothing here should be edited for a normal lab run. The setup notebook writes
+# a resolved copy to a temp path and calls  ws.run(<that path>)  for you.
+# ============================================================================
+
+# ── Databricks target ───────────────────────────────────────────────────────
+databricks:
+  workspace_url: ""     # filled in at runtime with the current workspace host
+  profile: ""           # "" → the notebook's ambient credentials (no login)
+
+# ── Prebuilt app artifact (ships in this repo — no build step, no toolchain) ──
+artifact:
+  path: ./artifact/solution-builder-build.zip
+  workspace_source_path: ""   # blank → staged under the signed-in identity's home
+
+# ── The deployed app ──────────────────────────────────────────────────────────
+app:
+  name: solution-builder                          # becomes the app name + its URL
+  default_catalog: solution_builder_lab           # UC catalog new projects land in
+
+# ── Lakebase (Postgres) ───────────────────────────────────────────────────────
+lakebase:
+  project_id: solution-builder
+  reuse_existing: false        # false → create if missing (fresh lab workspace)
+
+# ── Serving endpoints ─────────────────────────────────────────────────────────
+# "auto" → the setup notebook discovers a CALLABLE endpoint of the right kind in
+# THIS workspace and substitutes its exact name before the install runs. Pin an
+# exact name here instead if a lab requires a specific model.
+endpoints:
+  anthropic_llm_endpoint: auto
+  anthropic_base_path: serving-endpoints/anthropic
+  ai_gateway: auto
+  ai_gateway_mini: auto
+  ai_gateway_embedding: auto
+
+# ── Deployer service principal (REQUIRED for AI/BI dashboards) ────────────────
+# The OBO token cannot carry the `dashboards` scope, so without this every
+# initial_templates/* demo fails to build its dashboard.
+deployer_sp:
+  enabled: true
+  name: solution-builder-deployer
+  secret_scope: solution-builder
+  secret_key: deployer-sp-client-secret
+  grant: admin                 # admin (adds SP to workspace `admins`) | none
+
+# ── Install-context logging (non-fatal telemetry) ────────────────────────────
+logging:
+  enabled: true

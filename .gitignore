@@ -1,0 +1,13 @@
+.DS_Store
+*.log
+*.bak
+*.bak.*
+.env
+*.swp
+*.swo
+*~
+__pycache__/
+# runtime-resolved installer config written by the setup notebook
+*.config.resolved.yaml
+# local Isaac tooling state
+.isaac/
