@@ -72,6 +72,27 @@ it can also be run by hand by a workspace admin. It:
 It is deterministic and idempotent — the same code produces the same result each
 time, and it is safe to re-run.
 
+### Install in a new workspace (step by step)
+
+For a fresh workspace outside Vocareum (or to run the setup by hand):
+
+1. **Get this repo into the workspace.** In a Vocareum lab it's already synced.
+   Otherwise, add it as a **Git folder**: Workspace ▸ your user folder ▸
+   **Create ▸ Git folder** → `https://github.com/databricks-learning/solution-builder-lab.git`
+   (branch `main`). Private-repo clones need your GitHub credentials linked under
+   Settings ▸ Linked accounts.
+2. **Open `Includes/Workspace-Setup.py`** and attach it to compute (serverless or
+   any cluster). You must be a **workspace admin** — setup creates the app and a
+   service principal and adds the SP to `admins`.
+3. Click **Run all**. It pins the SDK, discovers callable endpoints, provisions
+   Lakebase, deploys the app, wires it, and starts it. This takes several minutes;
+   nothing to fill in.
+4. When it finishes it prints the **App URL** — note it.
+5. Do the **one-time first-launch authorization** below (open the URL, accept the
+   consent prompt). The app is then ready for participants.
+
+Nothing in `Includes/installer/config.yaml` needs editing for a standard run.
+
 ### The bundled installer
 
 `Includes/installer/` is a **pure-Python** installer (no bash, no git, no build
