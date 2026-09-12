@@ -102,6 +102,9 @@ toolchain) that deploys a **prebuilt app artifact shipped in this repo**
 editing — the setup notebook fills in the workspace-specific values at runtime.
 Reference notes are under `Includes/installer/references/`.
 
+To rebuild the prebuilt artifact when the upstream source changes, follow
+**`Includes/installer/REFRESH-ARTIFACT.md`**.
+
 Upstream installer source:
 [github.com/vbalasu/solution-builder-installer](https://github.com/vbalasu/solution-builder-installer).
 

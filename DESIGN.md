@@ -99,4 +99,5 @@ resources.
 pick up newer upstream code, on a host with `git`+`uv`+`bun`+Databricks CLI: clone
 upstream [`solution-builder`](https://github.com/databricks-solutions/solution-builder),
 run `app/scripts/build.sh --target prod`, zip the resulting `.build` contents, and
-replace the vendored zip.
+replace the vendored zip. **Full step-by-step (with verification, secret-scrub,
+and rollback): [`Includes/installer/REFRESH-ARTIFACT.md`](Includes/installer/REFRESH-ARTIFACT.md).**
