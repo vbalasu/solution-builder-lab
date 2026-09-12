@@ -403,22 +403,35 @@ def step_provision_lakebase(w, cfg: Config) -> dict:
             return None
 
     def create_project():
+        # The create endpoint takes project_id as a QUERY param (a body-only
+        # convention is rejected with "Field 'project_id' is required"). Right
+        # after a teardown the name can still be reserved, so retry on a
+        # conflict until it frees; surface any OTHER error instead of masking it.
         info(f"Creating Lakebase project '{pid}' (defaults: autoscaling)…")
-        try:
-            api.do("POST", "/api/2.0/postgres/projects", query={"project_id": pid}, body={})
-        except DatabricksError:
+        last = None
+        for _ in range(30):  # ~3 min: wait out a just-deleted name reservation
             try:
-                api.do("POST", "/api/2.0/postgres/projects", body={"project_id": pid})
+                api.do("POST", "/api/2.0/postgres/projects", query={"project_id": pid}, body={})
+                break
             except DatabricksError as e:
-                # A lingering tombstone can 409 here; the readiness poll below
-                # still resolves once the name is reusable.
-                warn(f"create-project returned an error (continuing to poll): {e}")
+                last = e
+                m = str(e).lower()
+                if any(s in m for s in ("already exists", "already in use", "in use",
+                                        "conflict", "exists", "still")):
+                    info("  name not free yet (previous project still clearing) — retrying…")
+                    time.sleep(6)
+                    continue
+                die(f"Lakebase create failed for '{pid}': {e}")
+        else:
+            die(f"Lakebase name '{pid}' never freed up (still clearing from a prior "
+                f"delete). Wait a few minutes and re-run, or set a new "
+                f"lakebase.project_id in config.yaml. Last error: {last}")
         for _ in range(50):  # up to ~5 min for the project to become ready
             b = list_branches()
             if b:
                 return b
             time.sleep(6)
-        die(f"Lakebase project '{pid}' did not become ready in time. Re-run shortly.")
+        die(f"Lakebase project '{pid}' created but not ready in time — re-run shortly.")
 
     # A freshly torn-down project is deleted ASYNCHRONOUSLY: a bare GET on the
     # project can still return while its branches sub-resource already 404s. So
