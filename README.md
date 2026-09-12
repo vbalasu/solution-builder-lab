@@ -111,6 +111,21 @@ After setup finishes, an admin should open the printed **App URL** once and acce
 the authorization prompt so the app's token carries the granted build scopes. If
 no prompt appears, stop then start the `solution-builder` app compute and reopen.
 
+### Clean up / start over
+
+To reverse the install and reinstall from scratch, run **`Includes/Teardown.py`**
+(admin). It's **safe by default** — with `CONFIRM = False` it only prints a plan.
+Set `CONFIRM = True` and **Run all** to delete the app, the Lakebase project, the
+deployer service principal (removed from `admins`), the deployer secret scope, and
+the uploaded app source.
+
+- **Kept:** the `solution_builder_lab` catalog and its data. Participant-built demo
+  assets (pipelines, dashboards, Genie spaces, jobs) are also kept — some live
+  outside the catalog; delete those by hand for a fully empty workspace.
+- **Scriptable / CLI:** `Includes/installer/teardown.py` runs the same teardown
+  from a laptop or CI — `./teardown.py` (dry run) then `./teardown.py --confirm`.
+- After teardown, run **`Includes/Workspace-Setup.py`** to reinstall.
+
 ### Notes
 
 - **One app per workspace**, shared by up to ~50 participants; each builds their

@@ -80,6 +80,19 @@ Manual, once per workspace: open the App URL, accept the OAuth consent prompt
 4. **One app per workspace** — up to ~50 participants share the single running
    app; each builds their own solution/DAB.
 
+## Teardown / start over
+
+`Includes/installer/teardown.py` (config-driven, pure Python) reverses the
+install, and `Includes/Teardown.py` is its in-workspace "Run all" notebook. It
+reuses the installer's config loader and helpers (no duplication) and deletes, in
+reverse order: the app (its managed SP + deployments go with it), the Lakebase
+project, the deployer SP (removed from `admins` first), the deployer secret scope,
+and the uploaded source. It **keeps** the `solution_builder_lab` catalog and its
+data; participant-built assets that live outside the catalog are not swept. Both
+paths are **dry-run by default** — the CLI needs `--confirm`, the notebook needs
+`CONFIRM = True` — and every delete is idempotent/tolerant of already-gone
+resources.
+
 ## Refreshing the prebuilt artifact
 
 `Includes/installer/artifact/solution-builder-build.zip` is a pinned snapshot. To
