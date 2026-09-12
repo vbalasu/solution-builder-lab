@@ -143,8 +143,8 @@ if needs_auto:
         return cands[0] if cands else fallback
 
     resolved = {
-        "anthropic_llm_endpoint": _pick(chat_ok, ["claude-sonnet", "claude"], ""),
-        "ai_gateway":             _pick(chat_ok, ["claude-sonnet", "claude", "gpt"], ""),
+        "anthropic_llm_endpoint": _pick(chat_ok, ["claude-opus", "claude-sonnet", "claude"], ""),
+        "ai_gateway":             _pick(chat_ok, ["claude-opus", "claude-sonnet", "claude", "gpt"], ""),
         "ai_gateway_mini":        _pick(chat_ok, ["mini", "nano", "flash", "haiku", "gpt"], ""),
         "ai_gateway_embedding":   _pick(embed_ok, ["embedding", "embed", "bge", "gte", "qwen"], ""),
     }

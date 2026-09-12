@@ -52,7 +52,7 @@ Manual, once per workspace: open the App URL, accept the OAuth consent prompt
 |---|---|---|
 | Bundle location | Vendor the installer into this repo (`Includes/installer/`) | Self-contained; clones anywhere the lab is synced (Vocareum, a Repo, a workspace folder). |
 | Install vehicle | **In-notebook** `%pip` + `restartPython`, then `importlib`-load + `ws.run()` | One notebook, run directly by Vocareum; the SDK is pinned by the `%pip` step so the Apps/Lakebase APIs work. The restart is a single one-time cell. |
-| Endpoints | `auto` in `config.yaml`; the notebook discovers a **callable** endpoint per kind | Workspaces list endpoints that are disabled (rate-limit 0); discovery picks one that actually responds (prefers `claude-sonnet` for chat, an embedding model for embeddings). |
+| Endpoints | `auto` in `config.yaml`; the notebook discovers a **callable** endpoint per kind | Workspaces list endpoints that are disabled (rate-limit 0); discovery picks one that actually responds, preferring `claude-opus` → `claude-sonnet` for the agent model + primary gateway (falling back to Sonnet when Opus is disabled), a cheap/fast model for the `mini` slot, and an embedding model for embeddings. |
 | Default catalog | **Fixed** `solution_builder_lab` | A named, predictable lab catalog for all participants. Created at app boot; the admin deployer SP can create it. |
 | Deployer SP | Added to the `admins` group | The OBO token can't carry the `dashboards` scope, so a broadly-privileged build identity is needed for every `initial_templates/*` demo to build. Acceptable for a disposable lab workspace. |
 | Artifact | Vendor a **prebuilt** `solution-builder-build.zip` | No build toolchain (`uv`/`bun`/CLI) in the workspace; clone → run. |

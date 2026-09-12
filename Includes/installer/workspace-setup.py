@@ -333,8 +333,8 @@ def step_check_endpoints(w, cfg: Config) -> None:
 
 def _discover_callable(w) -> tuple[list[str], list[str]]:
     def rank(n: str) -> int:
-        order = ["claude-sonnet", "claude-haiku", "claude", "gpt-5-4-mini", "gpt-5-mini",
-                 "gpt", "gemini", "llama"]
+        order = ["claude-opus", "claude-sonnet", "claude-haiku", "claude", "gpt-5-4-mini",
+                 "gpt-5-mini", "gpt", "gemini", "llama"]
         n = n.lower()
         return next((i for i, p in enumerate(order) if p in n), len(order))
     chat, embed = [], []
@@ -359,8 +359,8 @@ def _print_paste_ready(w) -> None:
                 if nd in c.lower():
                     return c
         return cands[0] if cands else fallback
-    llm = pick(chat_ok, ["claude-sonnet", "claude"], "<no-callable-chat-endpoint>")
-    gw = pick(chat_ok, ["claude-sonnet", "claude", "gpt"], llm)
+    llm = pick(chat_ok, ["claude-opus", "claude-sonnet", "claude"], "<no-callable-chat-endpoint>")
+    gw = pick(chat_ok, ["claude-opus", "claude-sonnet", "claude", "gpt"], llm)
     mini = pick(chat_ok, ["mini", "nano", "flash", "haiku", "gpt"], gw)
     emb = pick(embed_ok, ["embedding", "embed", "bge", "gte", "qwen"], "<no-callable-embedding-endpoint>")
     hr()
