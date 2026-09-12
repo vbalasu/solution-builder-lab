@@ -387,35 +387,68 @@ def step_provision_lakebase(w, cfg: Config) -> dict:
     pid = cfg.lb_project
     api = w.api_client
 
-    def project_exists() -> bool:
+    def get_project():
         try:
-            api.do("GET", f"/api/2.0/postgres/projects/{pid}")
-            return True
+            return api.do("GET", f"/api/2.0/postgres/projects/{pid}")
         except DatabricksError:
-            return False
+            return None
 
-    if project_exists():
-        ok(f"Lakebase project '{pid}' exists — reusing it.")
-    elif cfg.lb_reuse:
-        die(f"Lakebase project '{pid}' not found (lakebase.reuse_existing=true).")
-    else:
+    def list_branches():
+        """Branches list if the project is usable; None if the project itself is
+        not found on the sub-resource (gone or mid-delete — see the teardown race
+        below); [] if the project exists but has no branches yet (mid-create)."""
+        try:
+            return (api.do("GET", f"/api/2.0/postgres/projects/{pid}/branches") or {}).get("branches", [])
+        except DatabricksError:
+            return None
+
+    def create_project():
         info(f"Creating Lakebase project '{pid}' (defaults: autoscaling)…")
         try:
             api.do("POST", "/api/2.0/postgres/projects", query={"project_id": pid}, body={})
         except DatabricksError:
-            # Fallback for a body-style create convention.
-            api.do("POST", "/api/2.0/postgres/projects", body={"project_id": pid})
-        for _ in range(40):
             try:
-                p = api.do("GET", f"/api/2.0/postgres/projects/{pid}")
-                if (p.get("status") or {}).get("default_branch"):
-                    break
-            except DatabricksError:
-                pass
+                api.do("POST", "/api/2.0/postgres/projects", body={"project_id": pid})
+            except DatabricksError as e:
+                # A lingering tombstone can 409 here; the readiness poll below
+                # still resolves once the name is reusable.
+                warn(f"create-project returned an error (continuing to poll): {e}")
+        for _ in range(50):  # up to ~5 min for the project to become ready
+            b = list_branches()
+            if b:
+                return b
             time.sleep(6)
-        ok("Project created.")
+        die(f"Lakebase project '{pid}' did not become ready in time. Re-run shortly.")
 
-    branches = (api.do("GET", f"/api/2.0/postgres/projects/{pid}/branches") or {}).get("branches", [])
+    # A freshly torn-down project is deleted ASYNCHRONOUSLY: a bare GET on the
+    # project can still return while its branches sub-resource already 404s. So
+    # readiness = branches listable & non-empty, never just "GET project works".
+    branches = list_branches()
+    if branches:
+        ok(f"Lakebase project '{pid}' exists — reusing it.")
+    elif get_project() is not None and branches is not None:
+        # Project record present but no branches yet → mid-create; wait.
+        info(f"Project '{pid}' present but not ready yet — waiting for branches…")
+        branches = create_project()   # its poll also covers the mid-create case
+    elif get_project() is not None and branches is None:
+        # Project record present but sub-resources 404 → mid-DELETE (post-teardown).
+        info(f"Project '{pid}' is mid-delete (branches unavailable) — waiting for it to clear…")
+        for _ in range(60):  # up to ~6 min for the delete to finish
+            time.sleep(6)
+            if get_project() is None:
+                break
+            if list_branches():   # delete aborted / it recovered → reuse
+                break
+        branches = list_branches()
+        if not branches:
+            if cfg.lb_reuse:
+                die(f"Lakebase project '{pid}' is not usable and reuse_existing=true.")
+            branches = create_project()
+    elif cfg.lb_reuse:
+        die(f"Lakebase project '{pid}' not found (lakebase.reuse_existing=true).")
+    else:
+        branches = create_project()
+
     if not branches:
         die(f"No branches found on project '{pid}'.")
     default = next((b for b in branches if (b.get("status") or {}).get("default")), branches[0])

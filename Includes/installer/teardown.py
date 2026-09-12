@@ -74,9 +74,21 @@ def _del_lakebase(w, pid: str) -> None:
         return
     try:
         w.api_client.do("DELETE", f"/api/2.0/postgres/projects/{pid}")
-        ws.ok(f"Deleted Lakebase project '{pid}'.")
     except DatabricksError as e:
         ws.warn(f"Lakebase delete error (check the Lakebase UI): {e}")
+        return
+    # Deletion is ASYNC. Wait for it to fully clear so an immediate reinstall
+    # doesn't hit a mid-delete project (a bare GET can still return during it).
+    import time
+    for _ in range(60):  # up to ~6 min
+        try:
+            w.api_client.do("GET", f"/api/2.0/postgres/projects/{pid}")
+        except DatabricksError:
+            ws.ok(f"Deleted Lakebase project '{pid}' (fully cleared).")
+            return
+        time.sleep(6)
+    ws.warn(f"Lakebase project '{pid}' delete issued but still visible after ~6 min; "
+            "wait before reinstalling (the installer also handles mid-delete).")
 
 
 def _del_deployer_sp(w, cfg) -> None:
